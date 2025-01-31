@@ -1,32 +1,49 @@
 import sys
 import os
+import mmap
+from datetime import datetime
 
-def extract_logs(log_file, date):
-    """Extract logs for a given date and save them to an output file."""
-    
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, f"output_{date}.txt")
-    
+def validate_date(date_str):
+    """Checks if the date format is valid (YYYY-MM-DD)."""
     try:
-        with open(log_file, "r") as file, open(output_file, "w") as output:
-            for line in file:
-                if line.startswith(date):
-                    output.write(line)
-        
-        print(f"✅ Logs for {date} saved in: {output_file}")
-    
-    except FileNotFoundError:
-        print("❌ Error: Log file not found. Please check the file path.")
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        datetime.strptime(date_str, '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
 
-if __name__ == "__main__":
+def extract_logs(input_file, input_date, output_dir="output"):
+    """Extracts logs for a specific date using memory-mapped files for efficiency."""
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, f'output_{input_date}.txt')
+
+    target_prefix = input_date.encode('utf-8') + b' '
+
+    try:
+        with open(input_file, 'rb') as f_in, open(output_file, 'wb') as f_out:
+            mmapped_file = mmap.mmap(f_in.fileno(), 0, access=mmap.ACCESS_READ)
+            for line in iter(mmapped_file.readline, b""):
+                if line.startswith(target_prefix):
+                    f_out.write(line)
+            mmapped_file.close()
+        
+        print(f"✅ Logs for {input_date} saved to: {output_file}")
+
+    except FileNotFoundError:
+        print(f"❌ Error: Input file '{input_file}' not found.")
+        sys.exit(1)
+    except IOError as e:
+        print(f"❌ IO error occurred: {e}")
+        sys.exit(1)
+
+if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print("❌ Usage: python extract_logs.py YYYY-MM-DD")
+        print("Usage: python extract_logs.py YYYY-MM-DD")
         sys.exit(1)
     
-    date = sys.argv[1]
-    log_file = "test_logs.log.txt"  # Ensure this file is downloaded beforehand
-    
-    extract_logs(log_file, date)
+    input_date = sys.argv[1]
+    if not validate_date(input_date):
+        print(f"❌ Invalid date format: {input_date}. Use YYYY-MM-DD.")
+        sys.exit(1)
+
+    log_file = 'test_logs.log.txt'
+    extract_logs(log_file, input_date)

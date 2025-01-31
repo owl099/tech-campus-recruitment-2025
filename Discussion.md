@@ -26,5 +26,16 @@ Portability and Reliability
 Simpler Error Handling
 
 
-to run this 
+to run this :
+1. Prerequisites
+  Install Python (python3 --version).
+2.download the log file :
+  To download the log file, run the following command in your terminal:
+
+  curl -L -o test_logs.log "https://limewire.com/d/90794bb3-6831-4e02-8a59-ffc7f3b8b2a3#X1xnzrH5s4H_DKEkT_dfBuUT1mFKZuj4cFWNoMJGX98"
+3. save it wit the name as test_logs.log.txt and place in teh same directory.
+4.use the command
+Usage: python extract_logs.py YYYY-MM-DD   
+
+
 
